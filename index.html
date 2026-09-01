@@ -182,6 +182,7 @@ tbody td:last-child{border-right:none;}
   <div class="form-group"><label>Degiro (€)</label><input type="number" id="f-dg" placeholder="0.00" step="0.01"><div class="form-hint">Guardado: valor × 72% (−28% impostos)</div></div>
   <div class="form-group"><label>Revolut Férias (€)</label><input type="number" id="f-rf" placeholder="0.00" step="0.01"><div class="form-hint">Guardado: valor ÷ 2</div></div>
   <div class="form-group"><label>Revolut Ações (€)</label><input type="number" id="f-ra" placeholder="0.00" step="0.01"><div class="form-hint">Guardado: valor × 72% (−28% impostos)</div></div>
+  <div class="form-group"><label>Split (€)</label><input type="number" id="f-sp" placeholder="0.00" step="0.01"></div>
   <button class="btn-submit" onclick="saveContas()">Guardar</button>
   <button class="btn-cancel" onclick="closeModal('modal-contas')">Cancelar</button>
 </div>
@@ -328,6 +329,7 @@ function dbRowToContas(r) {
     dg:+r.dg||0, _dg_raw:+r.dg_raw||0,
     rf:+r.rf||0, _rf_raw:+r.rf_raw||0,
     ra:+r.ra||0, _ra_raw:+r.ra_raw||0,
+    sp:+r.sp||0,
     total:+r.total||0
   };
 }
@@ -346,6 +348,7 @@ async function upsertContas(rec, utilizador) {
       dg:rec.dg, dg_raw:rec._dg_raw,
       rf:rec.rf, rf_raw:rec._rf_raw,
       ra:rec.ra, ra_raw:rec._ra_raw,
+      sp:rec.sp,
       total:rec.total
     }, session.access_token);
   } catch(e) { showToast('Erro ao guardar'); console.error(e); }
@@ -483,10 +486,10 @@ function getContasAgg(user) {
     const map={};
     ['Catarina','Alice'].forEach(u=>(db.contas[u]||[]).forEach(r=>{
       const k=r.ano+'_'+r.mes;
-      if(!map[k]) map[k]={ano:r.ano,mes:r.mes,cc:0,cp:0,ca:0,tp:0,ta:0,dg:0,rf:0,ra:0};
-      ['cc','cp','ca','tp','ta','dg','rf','ra'].forEach(f=>map[k][f]+=(r[f]||0));
+      if(!map[k]) map[k]={ano:r.ano,mes:r.mes,cc:0,cp:0,ca:0,tp:0,ta:0,dg:0,rf:0,ra:0,sp:0};
+      ['cc','cp','ca','tp','ta','dg','rf','ra','sp'].forEach(f=>map[k][f]+=(r[f]||0));
     }));
-    return Object.values(map).map(r=>({...r,total:['cc','cp','ca','tp','ta','dg','rf','ra'].reduce((s,f)=>s+r[f],0)}));
+    return Object.values(map).map(r=>({...r,total:['cc','cp','ca','tp','ta','dg','rf','ra','sp'].reduce((s,f)=>s+r[f],0)}));
   }
   return getContasRows(user);
 }
@@ -548,8 +551,8 @@ function renderContas() {
 function renderContasTable(rows,ro) {
   const el=document.getElementById('tbl-c'); if(!el||!rows.length) return;
   const showU=currentUser==='Todos';
-  el.innerHTML='<table><thead><tr>'+(showU?'<th>Utilizador</th>':'')+'<th>Ano</th><th>Mês</th><th>C.Corrente</th><th>Poupança</th><th>C.Aforro</th><th>T.Poup.</th><th>T.Ações</th><th>Degiro</th><th>R.Férias</th><th>R.Ações</th><th>Total</th>'+(ro?'':'<th>Ações</th>')+'</tr></thead><tbody>'+
-    [...rows].reverse().map(r=>'<tr>'+(showU?'<td><span class="tag-'+(r._user==='Catarina'?'cat':'ali')+'">'+(r._user==='Catarina'?'Catarina':'Alice')+'</span></td>':'')+'<td>'+r.ano+'</td><td>'+r.mes+'</td><td>'+fmt(r.cc)+'</td><td>'+fmt(r.cp)+'</td><td>'+fmt(r.ca)+'</td><td>'+fmt(r.tp)+'</td><td>'+fmt(r.ta)+'</td><td>'+fmt(r.dg)+'</td><td>'+fmt(r.rf)+'</td><td>'+fmt(r.ra)+'</td><td style="color:var(--teal);font-weight:800">'+fmt(r.total)+'</td>'+(ro?'':'<td><button class="btn-row-edit" onclick="editContas(\'+r.id+\')">Editar</button> <button class="btn-row-del" onclick="deleteContas(\'+r.id+\')">Apagar</button></td>')+'</tr>').join('')+'</tbody></table>';
+  el.innerHTML='<table><thead><tr>'+(showU?'<th>Utilizador</th>':'')+'<th>Ano</th><th>Mês</th><th>C.Corrente</th><th>Poupança</th><th>C.Aforro</th><th>T.Poup.</th><th>T.Ações</th><th>Degiro</th><th>R.Férias</th><th>R.Ações</th><th>Split</th><th>Total</th>'+(ro?'':'<th>Ações</th>')+'</tr></thead><tbody>'+
+    [...rows].reverse().map(r=>'<tr>'+(showU?'<td><span class="tag-'+(r._user==='Catarina'?'cat':'ali')+'">'+(r._user==='Catarina'?'Catarina':'Alice')+'</span></td>':'')+'<td>'+r.ano+'</td><td>'+r.mes+'</td><td>'+fmt(r.cc)+'</td><td>'+fmt(r.cp)+'</td><td>'+fmt(r.ca)+'</td><td>'+fmt(r.tp)+'</td><td>'+fmt(r.ta)+'</td><td>'+fmt(r.dg)+'</td><td>'+fmt(r.rf)+'</td><td>'+fmt(r.ra)+'</td><td>'+fmt(r.sp)+'</td><td style="color:var(--teal);font-weight:800">'+fmt(r.total)+'</td>'+(ro?'':'<td><button class="btn-row-edit" onclick="editContas(\'+r.id+\')">Editar</button> <button class="btn-row-del" onclick="deleteContas(\'+r.id+\')">Apagar</button></td>')+'</tr>').join('')+'</tbody></table>';
 }
 
 function renderBarChart(data) {
@@ -563,11 +566,11 @@ function renderPieChart(data) {
   const ctx=document.getElementById('chart-pie'); if(!ctx) return;
   if(chartPie){chartPie.destroy();chartPie=null;}
   if(!data.length) return;
-  const s={cc:0,cp:0,ca:0,tp:0,ta:0,dg:0,rf:0,ra:0};
-  data.forEach(r=>['cc','cp','ca','tp','ta','dg','rf','ra'].forEach(k=>s[k]+=(r[k]||0)));
-  const lbls=['C.Corrente','Poupança','C.Aforro','T.Poupança','T.Ações','Degiro','R.Férias','R.Ações'];
-  const vals=[s.cc,s.cp,s.ca,s.tp,s.ta,s.dg,s.rf,s.ra];
-  const cols=['#C97B5A','#2E6B63','#A8845C','#4DB8A4','#C8D96A','#8B5E3C','#5BA8A0','#E8A87C'];
+  const s={cc:0,cp:0,ca:0,tp:0,ta:0,dg:0,rf:0,ra:0,sp:0};
+  data.forEach(r=>['cc','cp','ca','tp','ta','dg','rf','ra','sp'].forEach(k=>s[k]+=(r[k]||0)));
+  const lbls=['C.Corrente','Poupança','C.Aforro','T.Poupança','T.Ações','Degiro','R.Férias','R.Ações','Split'];
+  const vals=[s.cc,s.cp,s.ca,s.tp,s.ta,s.dg,s.rf,s.ra,s.sp];
+  const cols=['#C97B5A','#2E6B63','#A8845C','#4DB8A4','#C8D96A','#8B5E3C','#5BA8A0','#E8A87C','#D97CA0'];
   const items=lbls.map((l,i)=>({l,v:vals[i],c:cols[i]})).filter(x=>x.v>0);
   chartPie=new Chart(ctx,{type:'doughnut',data:{labels:items.map(x=>x.l),datasets:[{data:items.map(x=>x.v),backgroundColor:items.map(x=>x.c),borderWidth:3,borderColor:'#FDFAF5'}]},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{color:'#4a7068',font:{size:9,family:'Nunito'},padding:8}},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}}}});
 }
@@ -584,9 +587,10 @@ function openModalContas(id) {
       document.getElementById('f-ca').value=r.ca||''; document.getElementById('f-tp').value=r.tp||'';
       document.getElementById('f-ta').value=r._ta_raw||r.ta||''; document.getElementById('f-dg').value=r._dg_raw||r.dg||'';
       document.getElementById('f-rf').value=r._rf_raw||r.rf||''; document.getElementById('f-ra').value=r._ra_raw||r.ra||'';
+      document.getElementById('f-sp').value=r.sp||'';
     }
   } else {
-    ['f-cc','f-cp','f-ca','f-tp','f-ta','f-dg','f-rf','f-ra'].forEach(i=>document.getElementById(i).value='');
+    ['f-cc','f-cp','f-ca','f-tp','f-ta','f-dg','f-rf','f-ra','f-sp'].forEach(i=>document.getElementById(i).value='');
     document.getElementById('f-ano').value=''; document.getElementById('f-mes').value='';
   }
   document.getElementById('modal-contas').classList.add('open');
@@ -601,9 +605,10 @@ async function saveContas() {
     id:editingId||Date.now().toString(), ano, mes,
     cc:v('f-cc'),cp:v('f-cp'),ca:v('f-ca'),tp:v('f-tp'),
     ta:tax(ta_r),_ta_raw:ta_r, dg:tax(dg_r),_dg_raw:dg_r,
-    rf:half(rf_r),_rf_raw:rf_r, ra:tax(ra_r),_ra_raw:ra_r
+    rf:half(rf_r),_rf_raw:rf_r, ra:tax(ra_r),_ra_raw:ra_r,
+    sp:v('f-sp')
   };
-  rec.total=rec.cc+rec.cp+rec.ca+rec.tp+rec.ta+rec.dg+rec.rf+rec.ra;
+  rec.total=rec.cc+rec.cp+rec.ca+rec.tp+rec.ta+rec.dg+rec.rf+rec.ra+rec.sp;
   if(!db.contas[currentUser]) db.contas[currentUser]=[];
   if(editingId) { const i=db.contas[currentUser].findIndex(x=>x.id===editingId); if(i>=0) db.contas[currentUser][i]=rec; }
   else db.contas[currentUser].push(rec);
