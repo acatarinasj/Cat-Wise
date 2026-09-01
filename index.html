@@ -549,7 +549,7 @@ function renderContasTable(rows,ro) {
   const el=document.getElementById('tbl-c'); if(!el||!rows.length) return;
   const showU=currentUser==='Todos';
   el.innerHTML='<table><thead><tr>'+(showU?'<th>Utilizador</th>':'')+'<th>Ano</th><th>Mês</th><th>C.Corrente</th><th>Poupança</th><th>C.Aforro</th><th>T.Poup.</th><th>T.Ações</th><th>Degiro</th><th>R.Férias</th><th>R.Ações</th><th>Total</th>'+(ro?'':'<th>Ações</th>')+'</tr></thead><tbody>'+
-    [...rows].reverse().map(r=>'<tr>'+(showU?'<td><span class="tag-'+(r._user==='Catarina'?'cat':'ali')+'">'+(r._user==='Catarina'?'Catarina':'Alice')+'</span></td>':'')+'<td>'+r.ano+'</td><td>'+r.mes+'</td><td>'+fmt(r.cc)+'</td><td>'+fmt(r.cp)+'</td><td>'+fmt(r.ca)+'</td><td>'+fmt(r.tp)+'</td><td>'+fmt(r.ta)+'</td><td>'+fmt(r.dg)+'</td><td>'+fmt(r.rf)+'</td><td>'+fmt(r.ra)+'</td><td style="color:var(--teal);font-weight:800">'+fmt(r.total)+'</td>'+(ro?'':'<td><button class="btn-row-edit" onclick="editContas(''+r.id+'')">Editar</button> <button class="btn-row-del" onclick="deleteContas(''+r.id+'')">Apagar</button></td>')+'</tr>').join('')+'</tbody></table>';
+    [...rows].reverse().map(r=>'<tr>'+(showU?'<td><span class="tag-'+(r._user==='Catarina'?'cat':'ali')+'">'+(r._user==='Catarina'?'Catarina':'Alice')+'</span></td>':'')+'<td>'+r.ano+'</td><td>'+r.mes+'</td><td>'+fmt(r.cc)+'</td><td>'+fmt(r.cp)+'</td><td>'+fmt(r.ca)+'</td><td>'+fmt(r.tp)+'</td><td>'+fmt(r.ta)+'</td><td>'+fmt(r.dg)+'</td><td>'+fmt(r.rf)+'</td><td>'+fmt(r.ra)+'</td><td style="color:var(--teal);font-weight:800">'+fmt(r.total)+'</td>'+(ro?'':'<td><button class="btn-row-edit" onclick="editContas(\'+r.id+\')">Editar</button> <button class="btn-row-del" onclick="deleteContas(\'+r.id+\')">Apagar</button></td>')+'</tr>').join('')+'</tbody></table>';
 }
 
 function renderBarChart(data) {
@@ -651,7 +651,7 @@ function renderAcoes() {
 function renderAcoesTable(rows) {
   const el=document.getElementById('tbl-a'); if(!el||!rows.length) return;
   el.innerHTML='<table><thead><tr><th>Ano</th><th>Mês</th><th>Ação</th><th>Valor</th><th>Após Imp.</th><th>Ações</th></tr></thead><tbody>'+
-    [...rows].reverse().map(r=>'<tr><td>'+r.ano+'</td><td>'+r.mes+'</td><td style="font-weight:800;color:var(--terra)">'+r.acao+'</td><td>'+fmt(r.valor)+'</td><td style="color:var(--brown)">'+fmt(r.valor_imp)+'</td><td><button class="btn-row-edit" onclick="editAcao(''+r.id+'')">Editar</button> <button class="btn-row-del" onclick="deleteAcao(''+r.id+'')">Apagar</button></td></tr>').join('')+'</tbody></table>';
+    [...rows].reverse().map(r=>'<tr><td>'+r.ano+'</td><td>'+r.mes+'</td><td style="font-weight:800;color:var(--terra)">'+r.acao+'</td><td>'+fmt(r.valor)+'</td><td style="color:var(--brown)">'+fmt(r.valor_imp)+'</td><td><button class="btn-row-edit" onclick="editAcao(\'+r.id+\')">Editar</button> <button class="btn-row-del" onclick="deleteAcao(\'+r.id+\')">Apagar</button></td></tr>').join('')+'</tbody></table>';
 }
 function renderAcaoBarChart(data) {
   const ctx=document.getElementById('chart-ac-bar'); if(!ctx) return;
