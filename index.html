@@ -12,6 +12,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap');
 :root{
@@ -72,6 +73,9 @@ canvas{max-height:190px;}
 .section-title{font-size:14px;font-weight:800;color:var(--text);}
 .btn-add{background:var(--teal);color:#fff;border:none;border-radius:20px;padding:7px 16px;font-size:11px;font-weight:700;cursor:pointer;transition:opacity 0.2s,transform 0.15s;box-shadow:0 2px 10px rgba(46,107,99,0.35);font-family:'Nunito',sans-serif;}
 .btn-add:hover{opacity:0.88;transform:translateY(-1px);}
+.section-header-actions{display:flex;gap:6px;}
+.btn-export{background:transparent;color:var(--teal);border:1.5px solid var(--teal);border-radius:20px;padding:6px 14px;font-size:11px;font-weight:700;cursor:pointer;transition:all 0.2s;font-family:'Nunito',sans-serif;}
+.btn-export:hover{background:rgba(46,107,99,0.1);}
 .tbl-wrap{overflow-x:auto;border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border);margin-bottom:14px;}
 table{width:100%;border-collapse:collapse;background:var(--surface);}
 thead tr{background:var(--surface2);}
@@ -477,9 +481,9 @@ function getContasRows(user) {
   if(user==='Todos') {
     const all=[];
     ['Catarina','Alice'].forEach(u=>(db.contas[u]||[]).forEach(r=>all.push({...r,_user:u})));
-    return all.map(r=>({...r,total:(r.cc||0)+(r.cp||0)+(r.ca||0)+(r.tp||0)+(r.ta||0)+(r.dg||0)+(r.rf||0)+(r.ra||0)}));
+    return all.map(r=>({...r,total:(r.cc||0)+(r.cp||0)+(r.ca||0)+(r.tp||0)+(r.ta||0)+(r.dg||0)+(r.rf||0)+(r.ra||0)+(r.sp||0)}));
   }
-  return (db.contas[user]||[]).map(r=>({...r,total:(r.cc||0)+(r.cp||0)+(r.ca||0)+(r.tp||0)+(r.ta||0)+(r.dg||0)+(r.rf||0)+(r.ra||0)}));
+  return (db.contas[user]||[]).map(r=>({...r,total:(r.cc||0)+(r.cp||0)+(r.ca||0)+(r.tp||0)+(r.ta||0)+(r.dg||0)+(r.rf||0)+(r.ra||0)+(r.sp||0)}));
 }
 function getContasAgg(user) {
   if(user==='Todos') {
@@ -541,7 +545,10 @@ function renderContas() {
     <div class="chart-card"><div class="chart-title">Distribuição por Conta</div><canvas id="chart-pie"></canvas></div>
     <div class="section-header">
       <div class="section-title">Registos (${rows.length})</div>
-      ${!ro?'<button class="btn-add" onclick="openModalContas()">Novo Registo</button>':''}
+      <div class="section-header-actions">
+        ${rows.length?'<button class="btn-export" onclick="exportContasExcel()">Exportar Excel</button>':''}
+        ${!ro?'<button class="btn-add" onclick="openModalContas()">Novo Registo</button>':''}
+      </div>
     </div>
     <div class="tbl-wrap" id="tbl-c">${!rows.length?'<div class="empty-state"><div class="empty-text">Sem registos.</div></div>':''}</div>`;
   const fl=applyFilters(agg,f.c_ai,f.c_af,f.c_mi,f.c_mf);
@@ -553,6 +560,17 @@ function renderContasTable(rows,ro) {
   const showU=currentUser==='Todos';
   el.innerHTML='<table><thead><tr>'+(showU?'<th>Utilizador</th>':'')+'<th>Ano</th><th>Mês</th><th>C.Corrente</th><th>Poupança</th><th>C.Aforro</th><th>T.Poup.</th><th>T.Ações</th><th>Degiro</th><th>R.Férias</th><th>R.Ações</th><th>Split</th><th>Total</th>'+(ro?'':'<th>Ações</th>')+'</tr></thead><tbody>'+
     [...rows].reverse().map(r=>'<tr>'+(showU?'<td><span class="tag-'+(r._user==='Catarina'?'cat':'ali')+'">'+(r._user==='Catarina'?'Catarina':'Alice')+'</span></td>':'')+'<td>'+r.ano+'</td><td>'+r.mes+'</td><td>'+fmt(r.cc)+'</td><td>'+fmt(r.cp)+'</td><td>'+fmt(r.ca)+'</td><td>'+fmt(r.tp)+'</td><td>'+fmt(r.ta)+'</td><td>'+fmt(r.dg)+'</td><td>'+fmt(r.rf)+'</td><td>'+fmt(r.ra)+'</td><td>'+fmt(r.sp)+'</td><td style="color:var(--teal);font-weight:800">'+fmt(r.total)+'</td>'+(ro?'':'<td><button class="btn-row-edit" onclick="editContas(\'+r.id+\')">Editar</button> <button class="btn-row-del" onclick="deleteContas(\'+r.id+\')">Apagar</button></td>')+'</tr>').join('')+'</tbody></table>';
+}
+function exportContasExcel() {
+  const rows=sortByPeriod(getContasRows(currentUser));
+  if(!rows.length) { showToast('Sem registos para exportar'); return; }
+  const showU=currentUser==='Todos';
+  const header=[...(showU?['Utilizador']:[]),'Ano','Mês','C.Corrente','Poupança','C.Aforro','T.Poup.','T.Ações','Degiro','R.Férias','R.Ações','Split','Total'];
+  const data=rows.map(r=>[...(showU?[r._user]:[]),r.ano,r.mes,r.cc,r.cp,r.ca,r.tp,r.ta,r.dg,r.rf,r.ra,r.sp,r.total]);
+  const ws=XLSX.utils.aoa_to_sheet([header,...data]);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Contas');
+  XLSX.writeFile(wb,'CatWise_Contas_'+currentUser+'.xlsx');
 }
 
 function renderBarChart(data) {
@@ -647,7 +665,10 @@ function renderAcoes() {
     <div class="chart-card"><div class="chart-title">Distribuição por Ação</div><canvas id="chart-ac-pie"></canvas></div>
     <div class="section-header">
       <div class="section-title">Ações (${rows.length})</div>
-      <button class="btn-add" onclick="openModalAcoes()">Nova Ação</button>
+      <div class="section-header-actions">
+        ${rows.length?'<button class="btn-export" onclick="exportAcoesExcel()">Exportar Excel</button>':''}
+        <button class="btn-add" onclick="openModalAcoes()">Nova Ação</button>
+      </div>
     </div>
     <div class="tbl-wrap" id="tbl-a">${!rows.length?'<div class="empty-state"><div class="empty-text">Sem ações.</div></div>':''}</div>`;
   const fl=applyFilters(rows,f.a_ai,f.a_af,f.a_mi,f.a_mf);
@@ -657,6 +678,16 @@ function renderAcoesTable(rows) {
   const el=document.getElementById('tbl-a'); if(!el||!rows.length) return;
   el.innerHTML='<table><thead><tr><th>Ano</th><th>Mês</th><th>Ação</th><th>Valor</th><th>Após Imp.</th><th>Ações</th></tr></thead><tbody>'+
     [...rows].reverse().map(r=>'<tr><td>'+r.ano+'</td><td>'+r.mes+'</td><td style="font-weight:800;color:var(--terra)">'+r.acao+'</td><td>'+fmt(r.valor)+'</td><td style="color:var(--brown)">'+fmt(r.valor_imp)+'</td><td><button class="btn-row-edit" onclick="editAcao(\'+r.id+\')">Editar</button> <button class="btn-row-del" onclick="deleteAcao(\'+r.id+\')">Apagar</button></td></tr>').join('')+'</tbody></table>';
+}
+function exportAcoesExcel() {
+  const rows=sortByPeriod([...getAcoesData()]);
+  if(!rows.length) { showToast('Sem ações para exportar'); return; }
+  const header=['Ano','Mês','Ação','Valor','Após Imp.'];
+  const data=rows.map(r=>[r.ano,r.mes,r.acao,r.valor,r.valor_imp]);
+  const ws=XLSX.utils.aoa_to_sheet([header,...data]);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Ações');
+  XLSX.writeFile(wb,'CatWise_Acoes.xlsx');
 }
 function renderAcaoBarChart(data) {
   const ctx=document.getElementById('chart-ac-bar'); if(!ctx) return;
