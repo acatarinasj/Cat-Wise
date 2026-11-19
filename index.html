@@ -185,12 +185,12 @@ tbody td:last-child{border-right:none;}
   <div class="form-group"><label>Conta Corrente (€)</label><input type="number" id="f-cc" placeholder="0.00" step="0.01"></div>
   <div class="form-group"><label>Conta Poupança (€)</label><input type="number" id="f-cp" placeholder="0.00" step="0.01"></div>
   <div class="form-group"><label>Certificado de Aforro (€)</label><input type="number" id="f-ca" placeholder="0.00" step="0.01"></div>
-  <div class="form-group"><label>Trading Poupança (€)</label><input type="number" id="f-tp" placeholder="0.00" step="0.01"></div>
-  <div class="form-group"><label>Trading Ações (€)</label><input type="number" id="f-ta" placeholder="0.00" step="0.01"><div class="form-hint">Guardado: valor × 72% (−28% impostos)</div></div>
-  <div class="form-group"><label>Degiro (€)</label><input type="number" id="f-dg" placeholder="0.00" step="0.01"><div class="form-hint">Guardado: valor × 72% (−28% impostos)</div></div>
-  <div class="form-group"><label>Revolut Férias (€)</label><input type="number" id="f-rf" placeholder="0.00" step="0.01"><div class="form-hint">Guardado: valor ÷ 2</div></div>
-  <div class="form-group"><label>Revolut Ações (€)</label><input type="number" id="f-ra" placeholder="0.00" step="0.01"><div class="form-hint">Guardado: valor × 72% (−28% impostos)</div></div>
-  <div class="form-group"><label>Split (€)</label><input type="number" id="f-sp" placeholder="0.00" step="0.01"></div>
+  <div class="form-group" id="fg-tp"><label>Trading Poupança (€)</label><input type="number" id="f-tp" placeholder="0.00" step="0.01"></div>
+  <div class="form-group" id="fg-ta"><label>Trading Ações (€)</label><input type="number" id="f-ta" placeholder="0.00" step="0.01"><div class="form-hint">Guardado: valor × 72% (−28% impostos)</div></div>
+  <div class="form-group" id="fg-dg"><label>Degiro (€)</label><input type="number" id="f-dg" placeholder="0.00" step="0.01"><div class="form-hint">Guardado: valor × 72% (−28% impostos)</div></div>
+  <div class="form-group" id="fg-rf"><label>Revolut Férias (€)</label><input type="number" id="f-rf" placeholder="0.00" step="0.01"><div class="form-hint">Guardado: valor ÷ 2</div></div>
+  <div class="form-group" id="fg-ra"><label>Revolut Ações (€)</label><input type="number" id="f-ra" placeholder="0.00" step="0.01"><div class="form-hint">Guardado: valor × 72% (−28% impostos)</div></div>
+  <div class="form-group" id="fg-sp"><label>Split (€)</label><input type="number" id="f-sp" placeholder="0.00" step="0.01"></div>
   <button class="btn-submit" onclick="saveContas()">Guardar</button>
   <button class="btn-cancel" onclick="closeModal('modal-contas')">Cancelar</button>
 </div>
@@ -561,8 +561,9 @@ function renderContas() {
 function renderContasTable(rows,ro) {
   const el=document.getElementById('tbl-c'); if(!el||!rows.length) return;
   const showU=currentUser==='Todos';
-  el.innerHTML='<table><thead><tr>'+(showU?'<th>Utilizador</th>':'')+'<th>Ano</th><th>Mês</th><th>C.Corrente</th><th>Poupança</th><th>C.Aforro</th><th>T.Poup.</th><th>T.Ações</th><th>Degiro</th><th>R.Férias</th><th>R.Ações</th><th>Split</th><th>Total</th>'+(ro?'':'<th>Ações</th>')+'</tr></thead><tbody>'+
-    [...rows].reverse().map(r=>'<tr>'+(showU?'<td><span class="tag-'+(r._user==='Catarina'?'cat':'ali')+'">'+(r._user==='Catarina'?'Catarina':'Alice')+'</span></td>':'')+'<td>'+r.ano+'</td><td>'+r.mes+'</td><td>'+fmt(r.cc)+'</td><td>'+fmt(r.cp)+'</td><td>'+fmt(r.ca)+'</td><td>'+fmt(r.tp)+'</td><td>'+fmt(r.ta)+'</td><td>'+fmt(r.dg)+'</td><td>'+fmt(r.rf)+'</td><td>'+fmt(r.ra)+'</td><td>'+fmt(r.sp)+'</td><td style="color:var(--teal);font-weight:800">'+fmt(r.total)+'</td>'+(ro?'':'<td><button class="btn-row-edit" onclick="editContas(\''+r.id+'\')">Editar</button> <button class="btn-row-del" onclick="deleteContas(\''+r.id+'\')">Apagar</button></td>')+'</tr>').join('')+'</tbody></table>';
+  const hideExtra=currentUser==='Alice';
+  el.innerHTML='<table><thead><tr>'+(showU?'<th>Utilizador</th>':'')+'<th>Ano</th><th>Mês</th><th>C.Corrente</th><th>Poupança</th><th>C.Aforro</th>'+(hideExtra?'':'<th>T.Poup.</th><th>T.Ações</th><th>Degiro</th><th>R.Férias</th><th>R.Ações</th><th>Split</th>')+'<th>Total</th>'+(ro?'':'<th>Ações</th>')+'</tr></thead><tbody>'+
+    [...rows].reverse().map(r=>'<tr>'+(showU?'<td><span class="tag-'+(r._user==='Catarina'?'cat':'ali')+'">'+(r._user==='Catarina'?'Catarina':'Alice')+'</span></td>':'')+'<td>'+r.ano+'</td><td>'+r.mes+'</td><td>'+fmt(r.cc)+'</td><td>'+fmt(r.cp)+'</td><td>'+fmt(r.ca)+'</td>'+(hideExtra?'':'<td>'+fmt(r.tp)+'</td><td>'+fmt(r.ta)+'</td><td>'+fmt(r.dg)+'</td><td>'+fmt(r.rf)+'</td><td>'+fmt(r.ra)+'</td><td>'+fmt(r.sp)+'</td>')+'<td style="color:var(--teal);font-weight:800">'+fmt(r.total)+'</td>'+(ro?'':'<td><button class="btn-row-edit" onclick="editContas(\''+r.id+'\')">Editar</button> <button class="btn-row-del" onclick="deleteContas(\''+r.id+'\')">Apagar</button></td>')+'</tr>').join('')+'</tbody></table>';
 }
 function exportContasExcel() {
   const rows=sortByPeriod(getContasRows(currentUser));
@@ -657,6 +658,8 @@ function exportDiferencasExcel() {
 // CONTAS CRUD
 function openModalContas(id) {
   editingId=id||null;
+  const hideForAlice=currentUser==='Alice';
+  ['fg-tp','fg-ta','fg-dg','fg-rf','fg-ra','fg-sp'].forEach(fg=>document.getElementById(fg).style.display=hideForAlice?'none':'');
   document.getElementById('mc-title').textContent=id?'Editar Registo':'Novo Registo';
   if(id) {
     const r=(db.contas[currentUser]||[]).find(x=>x.id===id);
